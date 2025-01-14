@@ -2,7 +2,7 @@ plugins {
     java
     id("io.papermc.paperweight.userdev") version "2.0.0-beta.11"
     id("xyz.jpenilla.run-paper") version "2.3.1"
-    id("com.gradleup.shadow") version "8.3.3"
+    id("com.gradleup.shadow") version "9.0.0-beta4"
     kotlin("jvm") version "2.1.20-Beta1"
 }
 
@@ -29,7 +29,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 }
 
-val targetJavaVersion = 22
+val targetJavaVersion = 21
 java {
     val javaVersion = JavaVersion.toVersion(targetJavaVersion)
     sourceCompatibility = javaVersion
@@ -62,4 +62,8 @@ tasks.runServer {
 
 tasks.shadowJar {
     relocate("dev.jorel.commandapi", "net.anmvc.relocated")
+}
+
+tasks.build {
+    dependsOn(tasks.shadowJar)
 }

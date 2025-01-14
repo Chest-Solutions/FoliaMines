@@ -25,7 +25,7 @@ class FoliaMines: JavaPlugin() {
 
     override fun onDisable() {
         CommandAPI.onDisable()
-        minesConfig.save(Configuration.minesConfigFile!!)
+        this.saveDefaultConfig()
         // Plugin shutdown logic
     }
 

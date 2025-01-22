@@ -43,40 +43,48 @@ object Commands {
                 val blockData = args["blockData"] as BlockData
                 val delay: Int = args["delay"] as Int
 
-                val actor: Actor = BukkitAdapter.adapt(sender) // WorldEdit's native Player class extends Actor
-                val manager: SessionManager = WorldEdit.getInstance().sessionManager
-                val localSession: LocalSession = manager.get(actor)
-                val selectionWorld: World? = localSession.selectionWorld
-
-                val region: Region
-
-                try {
-                    if (selectionWorld == null) throw IncompleteRegionException()
-                    region = localSession.getSelection(selectionWorld)
-                } catch (ex: IncompleteRegionException) {
-                    actor.printError(TextComponent.of("Error. $ex"))
-                    return@CommandExecutor
-                }
-
-                if (region.boundingBox != null) {
-                    MinesCore.createMine(name,
-                        Location(
-                            Bukkit.getWorld(selectionWorld.name),
-                            region.boundingBox.pos1.x().toDouble(),
-                            region.boundingBox.pos1.y().toDouble(),
-                            region.boundingBox.pos1.z().toDouble()
-                        ),
-                        Location(Bukkit.getWorld(selectionWorld.name),
-                            region.boundingBox.pos2.x().toDouble(),
-                            region.boundingBox.pos2.y().toDouble(),
-                            region.boundingBox.pos2.z().toDouble()
-                        ),
-                        delay,
-                        blockData.material.asBlockType()!!)
-                } else if (location != null) {
+                if (location != null) {
                     MinesCore.createMine(name, location, location2, delay, blockData.material.asBlockType()!!)
+                } else if (!FoliaMines.isWorldeditInstalled()) {
+                    sender.sendMessage(miniMessage().deserialize("Set a location in the command."))
                 } else {
-                    sender.sendMessage(miniMessage().deserialize("Either: Set a location in the command, Or: Set a normal worldedit area"))
+
+                    val actor: Actor = BukkitAdapter.adapt(sender) // WorldEdit's native Player class extends Actor
+                    val manager: SessionManager = WorldEdit.getInstance().sessionManager
+                    val localSession: LocalSession = manager.get(actor)
+                    val selectionWorld: World? = localSession.selectionWorld
+
+                    val region: Region
+
+                    try {
+                        if (selectionWorld == null) throw IncompleteRegionException()
+                        region = localSession.getSelection(selectionWorld)
+                    } catch (ex: IncompleteRegionException) {
+                        actor.printError(TextComponent.of("Error. $ex"))
+                        return@CommandExecutor
+                    }
+
+                    if (region.boundingBox != null) {
+                        MinesCore.createMine(
+                            name,
+                            Location(
+                                Bukkit.getWorld(selectionWorld.name),
+                                region.boundingBox.pos1.x().toDouble(),
+                                region.boundingBox.pos1.y().toDouble(),
+                                region.boundingBox.pos1.z().toDouble()
+                            ),
+                            Location(
+                                Bukkit.getWorld(selectionWorld.name),
+                                region.boundingBox.pos2.x().toDouble(),
+                                region.boundingBox.pos2.y().toDouble(),
+                                region.boundingBox.pos2.z().toDouble()
+                            ),
+                            delay,
+                            blockData.material.asBlockType()!!
+                        )
+                    } else {
+                        sender.sendMessage(miniMessage().deserialize("Either: Set a location in the command, Or: Set a normal worldedit area"))
+                    }
                 }
             })
             .register()

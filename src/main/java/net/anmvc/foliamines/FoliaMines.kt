@@ -3,7 +3,6 @@ package net.anmvc.foliamines
 import dev.jorel.commandapi.CommandAPI
 import net.anmvc.foliamines.commands.Commands
 import net.anmvc.foliamines.mines.MinesCore
-import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.plugin.java.JavaPlugin
 
 class FoliaMines: JavaPlugin() {
@@ -30,6 +29,15 @@ class FoliaMines: JavaPlugin() {
 
     companion object {
         lateinit var plugin: FoliaMines
+
+        fun isWorldeditInstalled(): Boolean {
+            try {
+                Class.forName("com.sk89q.worldedit.WorldEdit")
+                return true
+            } catch (e: ClassNotFoundException) {
+                return false
+            }
+        }
     }
 
 }

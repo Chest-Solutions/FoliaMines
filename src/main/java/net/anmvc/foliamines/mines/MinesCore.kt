@@ -1,14 +1,10 @@
 package net.anmvc.foliamines.mines
 
-import io.papermc.paper.registry.RegistryAccess
-import io.papermc.paper.registry.RegistryKey
-import net.anmvc.foliamines.FoliaMines
-import net.minecraft.world.level.chunk.BulkSectionAccess
+import net.anmvc.foliamines.FoliaMines.Companion.plugin
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.NamespacedKey
 import org.bukkit.Registry
-import org.bukkit.block.Block
 import org.bukkit.block.BlockType
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.FileConfiguration
@@ -20,9 +16,8 @@ import kotlin.math.min
 
 
 object MinesCore: Listener {
-    val config: FileConfiguration = FoliaMines.minesConfig
+    val config: FileConfiguration = plugin.config
     val mineNameSection: ConfigurationSection = config.getConfigurationSection("mines") ?: config.createSection("mines")
-    val plugin: FoliaMines = FoliaMines.plugin
 
 
     fun setBlock(loc: Location, blockType: BlockType) {

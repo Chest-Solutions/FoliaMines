@@ -11,7 +11,6 @@ class FoliaMines: JavaPlugin() {
     override fun onLoad() {
         this.saveDefaultConfig()
         plugin = this
-        minesConfig = this.config
 
         CommandAPI.onLoad(Commands.getCommandAPIConfig())
         Commands.register()
@@ -25,13 +24,12 @@ class FoliaMines: JavaPlugin() {
 
     override fun onDisable() {
         CommandAPI.onDisable()
-        this.saveDefaultConfig()
+        this.saveConfig()
         // Plugin shutdown logic
     }
 
     companion object {
         lateinit var plugin: FoliaMines
-        lateinit var minesConfig: FileConfiguration
     }
 
 }

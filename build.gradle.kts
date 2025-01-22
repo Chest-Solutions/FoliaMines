@@ -17,9 +17,15 @@ repositories {
         name = "papermc-repo"
         url = uri("https://repo.papermc.io/repository/maven-public/")
     }
+
     maven {
         name = "sonatype"
         url = uri("https://oss.sonatype.org/content/groups/public/")
+    }
+
+    maven {
+        name = "enginehub"
+        url = uri("https://maven.enginehub.org/repo/")
     }
 }
 
@@ -27,6 +33,7 @@ dependencies {
     paperweight.paperDevBundle("$serverVersion-R0.1-SNAPSHOT")
     implementation("dev.jorel:commandapi-bukkit-shade-mojang-mapped:9.7.0")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation("com.sk89q.worldedit:worldedit-bukkit:7.3.10-SNAPSHOT")
 }
 
 val targetJavaVersion = 21

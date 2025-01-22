@@ -34,7 +34,7 @@ class FoliaMines: JavaPlugin() {
             try {
                 Class.forName("com.sk89q.worldedit.WorldEdit")
                 return true
-            } catch (e: ClassNotFoundException) {
+            } catch (_: ClassNotFoundException) {
                 return false
             }
         }

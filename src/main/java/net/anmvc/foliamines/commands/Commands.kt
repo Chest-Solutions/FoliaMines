@@ -4,7 +4,6 @@ import com.sk89q.worldedit.IncompleteRegionException
 import com.sk89q.worldedit.LocalSession
 import com.sk89q.worldedit.WorldEdit
 import com.sk89q.worldedit.bukkit.BukkitAdapter
-import com.sk89q.worldedit.entity.Player
 import com.sk89q.worldedit.extension.platform.Actor
 import com.sk89q.worldedit.regions.Region
 import com.sk89q.worldedit.session.SessionManager
@@ -17,8 +16,10 @@ import dev.jorel.commandapi.arguments.*
 import dev.jorel.commandapi.executors.CommandExecutor
 import net.anmvc.foliamines.FoliaMines
 import net.anmvc.foliamines.mines.MinesCore
+import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.data.BlockData
+import net.kyori.adventure.text.minimessage.MiniMessage.miniMessage
 
 
 object Commands {
@@ -42,10 +43,6 @@ object Commands {
                 val blockData = args["blockData"] as BlockData
                 val delay: Int = args["delay"] as Int
 
-                if (sender !is Player) {
-
-                }
-
                 val actor: Actor = BukkitAdapter.adapt(sender) // WorldEdit's native Player class extends Actor
                 val manager: SessionManager = WorldEdit.getInstance().sessionManager
                 val localSession: LocalSession = manager.get(actor)
@@ -61,11 +58,26 @@ object Commands {
                     return@CommandExecutor
                 }
 
-                region.boundingBox.pos1
-
-                
-
-                MinesCore.createMine(name, location!!, location2, delay, blockData.material.asBlockType()!!)
+                if (region.boundingBox != null) {
+                    MinesCore.createMine(name,
+                        Location(
+                            Bukkit.getWorld(selectionWorld.name),
+                            region.boundingBox.pos1.x().toDouble(),
+                            region.boundingBox.pos1.y().toDouble(),
+                            region.boundingBox.pos1.z().toDouble()
+                        ),
+                        Location(Bukkit.getWorld(selectionWorld.name),
+                            region.boundingBox.pos2.x().toDouble(),
+                            region.boundingBox.pos2.y().toDouble(),
+                            region.boundingBox.pos2.z().toDouble()
+                        ),
+                        delay,
+                        blockData.material.asBlockType()!!)
+                } else if (location != null) {
+                    MinesCore.createMine(name, location, location2, delay, blockData.material.asBlockType()!!)
+                } else {
+                    sender.sendMessage(miniMessage().deserialize("Either: Set a location in the command, Or: Set a normal worldedit area"))
+                }
             })
             .register()
 

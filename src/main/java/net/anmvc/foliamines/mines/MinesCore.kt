@@ -9,10 +9,8 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.max
 import kotlin.math.min
 
-@SuppressWarnings("deprecation")
 object MinesCore: Listener {
-    @SuppressWarnings("deprecation","removal")
-    fun setBlock(loc: Location, blockData: BlockData) {
+    private fun setBlock(loc: Location, blockData: BlockData) {
         val chunk = loc.chunk
         Bukkit.getServer().regionScheduler.run(plugin, loc, {
             if (chunk.isLoaded) {

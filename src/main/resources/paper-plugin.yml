@@ -3,3 +3,8 @@ version: '1.0-SNAPSHOT'
 main: net.anmvc.foliamines.FoliaMines
 api-version: '1.21'
 folia-supported: true
+dependencies:
+  server:
+    WorldEdit:
+      load: OMIT
+      join-classpath: true

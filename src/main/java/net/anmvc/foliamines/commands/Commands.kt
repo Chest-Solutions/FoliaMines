@@ -26,21 +26,15 @@ object Commands {
     fun register() {
         // Create our command
         CommandAPICommand("createmine")
-            .withArguments(StringArgument("name"))
-            .withOptionalArguments(
-                LocationArgument("location"),
-                LocationArgument("location2").combineWith(
-                    IntegerArgument("delay"),
-                    BlockStateArgument("blockData")
-                )
-            )
+            .withArguments(StringArgument("name"),IntegerArgument("delay"), BlockStateArgument("blockData"))
+            .withOptionalArguments(LocationArgument("location"), LocationArgument("location2"))
             .withAliases("newmine")   // Command aliases
             .withPermission(CommandPermission.OP)           // Required permissions
             .executes(CommandExecutor { sender, args ->
                 val name: String = args["name"] as String
                 val location: Location? = args["location"] as Location?
                 val location2: Location? = args["location2"] as Location?
-                val blockData = args["blockData"] as BlockData
+                val blockData: BlockData = args["blockData"] as BlockData
                 val delay: Int = args["delay"] as Int
 
                 if (location != null) {

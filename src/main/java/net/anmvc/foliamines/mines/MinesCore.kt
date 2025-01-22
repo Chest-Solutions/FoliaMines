@@ -12,7 +12,7 @@ import kotlin.math.min
 object MinesCore: Listener {
     private fun setBlock(loc: Location, blockData: BlockData) {
         val chunk = loc.chunk
-        Bukkit.getServer().regionScheduler.run(plugin, loc, {
+        Bukkit.getServer().regionScheduler.run(plugin, loc) {
             if (chunk.isLoaded) {
                 loc.block.blockData = blockData
             } else {
@@ -20,7 +20,7 @@ object MinesCore: Listener {
                 loc.block.blockData = blockData
                 loc.chunk.removePluginChunkTicket(plugin)
             }
-        })
+        }
     }
 
     fun setArea(loc: Location, loc2: Location?, blockData: BlockData) {

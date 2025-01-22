@@ -10,8 +10,8 @@ import org.bukkit.configuration.file.FileConfiguration
 import java.util.concurrent.TimeUnit
 
 object DelayMines {
-    val config: FileConfiguration = plugin.config
-    val mineNameSection: ConfigurationSection = config.getConfigurationSection("mines") ?: config.createSection("mines")
+    private val config: FileConfiguration = plugin.config
+    private val mineNameSection: ConfigurationSection = config.getConfigurationSection("mines") ?: config.createSection("mines")
 
     fun registerMines() {
         mineNameSection.getKeys(false).forEach { key ->

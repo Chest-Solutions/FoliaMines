@@ -15,7 +15,7 @@ import dev.jorel.commandapi.CommandPermission
 import dev.jorel.commandapi.arguments.*
 import dev.jorel.commandapi.executors.CommandExecutor
 import net.anmvc.foliamines.FoliaMines
-import net.anmvc.foliamines.mines.MinesCore
+import net.anmvc.foliamines.mines.DelayMines
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.data.BlockData
@@ -44,7 +44,7 @@ object Commands {
                 val delay: Int = args["delay"] as Int
 
                 if (location != null) {
-                    MinesCore.createMine(name, location, location2, delay, blockData.material.asBlockType()!!)
+                    DelayMines.createDelayMine(name, location, location2, delay, blockData)
                 } else if (!FoliaMines.isWorldeditInstalled()) {
                     sender.sendMessage(miniMessage().deserialize("Set a location in the command."))
                 } else {
@@ -65,7 +65,7 @@ object Commands {
                     }
 
                     if (region.boundingBox != null) {
-                        MinesCore.createMine(
+                        DelayMines.createDelayMine(
                             name,
                             Location(
                                 Bukkit.getWorld(selectionWorld.name),
@@ -80,7 +80,7 @@ object Commands {
                                 region.boundingBox.pos2.z().toDouble()
                             ),
                             delay,
-                            blockData.material.asBlockType()!!
+                            blockData
                         )
                     } else {
                         sender.sendMessage(miniMessage().deserialize("Either: Set a location in the command, Or: Set a normal worldedit area"))

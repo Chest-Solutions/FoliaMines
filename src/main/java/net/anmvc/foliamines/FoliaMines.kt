@@ -3,6 +3,8 @@ package net.anmvc.foliamines
 import dev.jorel.commandapi.CommandAPI
 import net.anmvc.foliamines.commands.Commands
 import net.anmvc.foliamines.mines.DelayMines
+import net.anmvc.foliamines.mines.InstantMines
+import net.anmvc.foliamines.mines.PercentageMines
 import org.bukkit.plugin.java.JavaPlugin
 
 class FoliaMines: JavaPlugin() {
@@ -18,6 +20,8 @@ class FoliaMines: JavaPlugin() {
     override fun onEnable() {
         CommandAPI.onEnable()
         DelayMines.registerMines()
+        PercentageMines.registerMines()
+        InstantMines.registerMines()
         // Plugin startup logic
     }
 

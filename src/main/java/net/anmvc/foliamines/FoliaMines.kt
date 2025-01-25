@@ -19,10 +19,11 @@ class FoliaMines: JavaPlugin() {
 
     override fun onEnable() {
         CommandAPI.onEnable()
-        DelayMines.registerMines()
-        PercentageMines.registerMines()
-        InstantMines.registerMines()
-        // Plugin startup logic
+        DelayMines.registerDelayMines()
+        InstantMines.registerInstantMines()
+        PercentageMines.registerPercentageMines()
+        server.pluginManager.registerEvents(InstantMines, this)
+        server.pluginManager.registerEvents(PercentageMines, this)
     }
 
     override fun onDisable() {
@@ -35,12 +36,7 @@ class FoliaMines: JavaPlugin() {
         lateinit var plugin: FoliaMines
 
         fun isWorldeditInstalled(): Boolean {
-            try {
-                Class.forName("com.sk89q.worldedit.WorldEdit")
-                return true
-            } catch (_: ClassNotFoundException) {
-                return false
-            }
+            return plugin.server.pluginManager.getPlugin("WorldEdit") != null
         }
     }
 

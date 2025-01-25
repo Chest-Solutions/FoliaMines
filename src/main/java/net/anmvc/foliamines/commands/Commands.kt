@@ -1,22 +1,14 @@
 package net.anmvc.foliamines.commands
 
-import com.sk89q.worldedit.IncompleteRegionException
-import com.sk89q.worldedit.LocalSession
-import com.sk89q.worldedit.WorldEdit
-import com.sk89q.worldedit.bukkit.BukkitAdapter
-import com.sk89q.worldedit.extension.platform.Actor
-import com.sk89q.worldedit.regions.Region
-import com.sk89q.worldedit.session.SessionManager
-import com.sk89q.worldedit.util.formatting.text.TextComponent
-import com.sk89q.worldedit.world.World
 import dev.jorel.commandapi.CommandAPIBukkitConfig
 import dev.jorel.commandapi.CommandAPICommand
 import dev.jorel.commandapi.CommandPermission
 import dev.jorel.commandapi.arguments.*
 import dev.jorel.commandapi.executors.CommandExecutor
 import net.anmvc.foliamines.FoliaMines
+import net.anmvc.foliamines.WorldEditHook
+import net.anmvc.foliamines.gui.CreateMineGui
 import net.anmvc.foliamines.mines.DelayMines
-import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.data.BlockData
 import net.kyori.adventure.text.minimessage.MiniMessage.miniMessage
@@ -41,44 +33,9 @@ object Commands {
                     DelayMines.createDelayMine(name, location, location2, delay, blockData)
                 } else if (!FoliaMines.isWorldeditInstalled()) {
                     sender.sendMessage(miniMessage().deserialize("Set a location in the command."))
+                    CreateMineGui.openMineGui(sender)
                 } else {
-
-                    val actor: Actor = BukkitAdapter.adapt(sender) // WorldEdit's native Player class extends Actor
-                    val manager: SessionManager = WorldEdit.getInstance().sessionManager
-                    val localSession: LocalSession = manager.get(actor)
-                    val selectionWorld: World? = localSession.selectionWorld
-
-                    val region: Region
-
-                    try {
-                        if (selectionWorld == null) throw IncompleteRegionException()
-                        region = localSession.getSelection(selectionWorld)
-                    } catch (ex: IncompleteRegionException) {
-                        actor.printError(TextComponent.of("Error. $ex"))
-                        return@CommandExecutor
-                    }
-
-                    if (region.boundingBox != null) {
-                        DelayMines.createDelayMine(
-                            name,
-                            Location(
-                                Bukkit.getWorld(selectionWorld.name),
-                                region.boundingBox.pos1.x().toDouble(),
-                                region.boundingBox.pos1.y().toDouble(),
-                                region.boundingBox.pos1.z().toDouble()
-                            ),
-                            Location(
-                                Bukkit.getWorld(selectionWorld.name),
-                                region.boundingBox.pos2.x().toDouble(),
-                                region.boundingBox.pos2.y().toDouble(),
-                                region.boundingBox.pos2.z().toDouble()
-                            ),
-                            delay,
-                            blockData
-                        )
-                    } else {
-                        sender.sendMessage(miniMessage().deserialize("Either: Set a location in the command, Or: Set a normal worldedit area"))
-                    }
+                    WorldEditHook.hookWorldedit(sender, name, blockData, delay)
                 }
             })
             .register()

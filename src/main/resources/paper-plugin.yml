@@ -7,4 +7,5 @@ dependencies:
   server:
     WorldEdit:
       load: OMIT
+      required: false
       join-classpath: true

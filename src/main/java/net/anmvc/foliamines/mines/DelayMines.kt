@@ -13,7 +13,7 @@ object DelayMines {
     private val config: FileConfiguration = plugin.config
     private val mineNameSection: ConfigurationSection = config.getConfigurationSection("mines") ?: config.createSection("mines")
 
-    fun registerMines() {
+    fun registerDelayMines() {
         mineNameSection.getKeys(false).forEach { key ->
             val mineSection: ConfigurationSection = config.getConfigurationSection(key) ?: return
 
@@ -22,9 +22,7 @@ object DelayMines {
             val blockData: BlockData = Bukkit.getServer().createBlockData(mineSection.get("blockType").toString())
             val delay: Int = mineSection.get("delay") as Int
 
-            Bukkit.getServer().asyncScheduler.runAtFixedRate(plugin, {
-                setArea(loc, loc2, blockData)
-            }, 0L, delay.toLong(), TimeUnit.MINUTES)
+            registerMine(loc, loc2, delay, blockData)
         }
     }
 
@@ -37,6 +35,10 @@ object DelayMines {
         mineSection.set("delay", delay)
         mineNameSection.set(name, true)
 
+        registerMine(loc, loc2, delay, blockData)
+    }
+
+    private fun registerMine(loc: Location, loc2: Location?, delay: Int, blockData: BlockData) {
         Bukkit.getServer().asyncScheduler.runAtFixedRate(plugin, {
             setArea(loc, loc2, blockData)
         }, 0L, delay.toLong(), TimeUnit.MINUTES)

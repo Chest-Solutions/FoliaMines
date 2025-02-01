@@ -79,7 +79,7 @@ jobs:
     - if: matrix.build-mode == 'manual'
       shell: bash
       run: |
-         ./gradlew --no-daemon -S -Dorg.gradle.warning.mode=none --init-script, /tmp/semmleTempDir/init.gradle clean
+         ./gradlew --no-daemon -S -Dorg.gradle.warning.mode=none --init-script /tmp/semmleTempDir/init.gradle clean
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3

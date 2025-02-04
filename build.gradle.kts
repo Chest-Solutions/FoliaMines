@@ -3,7 +3,7 @@ plugins {
     id("io.papermc.paperweight.userdev") version "2.0.0-beta.11"
     id("xyz.jpenilla.run-paper") version "2.3.1"
     id("com.gradleup.shadow") version "9.0.0-beta4"
-    kotlin("jvm") version "2.1.20-Beta1"
+    kotlin("jvm") version "2.1.10"
 }
 
 group = "net.csl"

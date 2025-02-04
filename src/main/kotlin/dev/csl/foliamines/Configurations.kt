@@ -1,4 +1,4 @@
-package net.anmvc.foliamines
+package dev.csl.foliamines
 
 object Configurations {
     fun saveMinesConfig() {

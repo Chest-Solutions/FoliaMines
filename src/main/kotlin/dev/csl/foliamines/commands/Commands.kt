@@ -1,14 +1,14 @@
-package net.anmvc.foliamines.commands
+package dev.csl.foliamines.commands
 
 import dev.jorel.commandapi.CommandAPIBukkitConfig
 import dev.jorel.commandapi.CommandAPICommand
 import dev.jorel.commandapi.CommandPermission
 import dev.jorel.commandapi.arguments.*
 import dev.jorel.commandapi.executors.CommandExecutor
-import net.anmvc.foliamines.FoliaMines
-import net.anmvc.foliamines.WorldEditHook
-import net.anmvc.foliamines.gui.CreateMineGui
-import net.anmvc.foliamines.mines.DelayMines
+import dev.csl.foliamines.FoliaMines
+import dev.csl.foliamines.WorldEditHook
+import dev.csl.foliamines.gui.CreateMineGui
+import dev.csl.foliamines.mines.DelayMines
 import org.bukkit.Location
 import org.bukkit.block.data.BlockData
 import net.kyori.adventure.text.minimessage.MiniMessage.miniMessage

@@ -1,0 +1,17 @@
+time {
+  set {
+    name brigadier:string quotable_phrase;
+    delay brigadier:integer;
+    night;
+    midnight;
+    time brigadier:integer;
+  }
+  add {
+    time brigadier:integer;
+  }
+  query {
+    daytime;
+    gametime;
+    day;
+  }
+}

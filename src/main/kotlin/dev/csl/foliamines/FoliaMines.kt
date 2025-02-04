@@ -1,10 +1,10 @@
-package net.anmvc.foliamines
+package dev.csl.foliamines
 
 import dev.jorel.commandapi.CommandAPI
-import net.anmvc.foliamines.commands.Commands
-import net.anmvc.foliamines.mines.DelayMines
-import net.anmvc.foliamines.mines.InstantMines
-import net.anmvc.foliamines.mines.PercentageMines
+import dev.csl.foliamines.commands.Commands
+import dev.csl.foliamines.mines.DelayMines
+import dev.csl.foliamines.mines.InstantMines
+import dev.csl.foliamines.mines.PercentageMines
 import org.bukkit.plugin.java.JavaPlugin
 
 class FoliaMines: JavaPlugin() {
@@ -22,8 +22,8 @@ class FoliaMines: JavaPlugin() {
         DelayMines.registerDelayMines()
         InstantMines.registerInstantMines()
         PercentageMines.registerPercentageMines()
-        server.pluginManager.registerEvents(InstantMines, this)
-        server.pluginManager.registerEvents(PercentageMines, this)
+        //server.pluginManager.registerEvents(InstantMines, this)
+        //server.pluginManager.registerEvents(PercentageMines, this)
     }
 
     override fun onDisable() {

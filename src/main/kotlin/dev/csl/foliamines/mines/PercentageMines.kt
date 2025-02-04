@@ -1,33 +1,21 @@
-package net.anmvc.foliamines.mines
+package dev.csl.foliamines.mines
 
-import net.anmvc.foliamines.FoliaMines.Companion.plugin
-import net.anmvc.foliamines.mines.MinesCore.getArea
-import net.anmvc.foliamines.mines.MinesCore.setArea
+import dev.csl.foliamines.FoliaMines.Companion.plugin
+import dev.csl.foliamines.mines.MinesCore.getArea
+import dev.csl.foliamines.mines.MinesCore.setArea
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.data.BlockData
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
 
-object PercentageMines: Listener {
+object PercentageMines {
     private val config: FileConfiguration = plugin.config
     private val mineNameSection: ConfigurationSection = config.getConfigurationSection("mines") ?: config.createSection("mines")
-
-    private fun registerMine(loc: Location, loc2: Location, blockData: BlockData, minPercentage: Double) {
-        @EventHandler
-        fun onBlockBreakEvent(event: BlockBreakEvent) {
-            val area: ArrayList<Location> = getArea(loc, loc2)
-
-            if (area.contains(event.block.location)) {
-                if (getPercentage(area) < minPercentage) {
-                    setArea(loc, loc2, blockData)
-                }
-            }
-        }
-    }
 
     private fun getPercentage(area: ArrayList<Location>): Double {
         /*
@@ -87,13 +75,7 @@ object PercentageMines: Listener {
             val blockData: BlockData = Bukkit.getServer().createBlockData(mineSection.get("blockType").toString())
             val minPercentage: Double = mineSection.get("minimum percentage") as Double
 
-//            Bukkit.getServer().asyncScheduler.runAtFixedRate(plugin, {
-//                if (getPercentage(loc,loc2) < minPercentage) {
-//                    setArea(loc, loc2, blockData)
-//                }
-//            }, 0L, 5, TimeUnit.MILLISECONDS)
-
-            registerMine(loc, loc2, blockData, minPercentage)
+            setupListeners(loc, loc2, minPercentage, blockData)
         }
     }
 
@@ -106,6 +88,22 @@ object PercentageMines: Listener {
         mineSection.set("minimum percentage", minPercentage)
         mineNameSection.set(name, true)
 
-        registerMine(loc, loc2, blockData, minPercentage)
+        setupListeners(loc, loc2, minPercentage, blockData)
+    }
+
+    private fun setupListeners(loc: Location, loc2: Location, minPercentage: Double, blockData: BlockData) {
+        val pluginManager = Bukkit.getPluginManager()
+        pluginManager.registerEvents(object: Listener {
+            @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+            fun onBlockBreakEvent(event: BlockBreakEvent) {
+                val area: ArrayList<Location> = getArea(loc, loc2)
+
+                if (area.contains(event.block.location)) {
+                    if (getPercentage(area) < minPercentage) {
+                        setArea(loc, loc2, blockData)
+                    }
+                }
+            }
+        }, plugin)
     }
 }

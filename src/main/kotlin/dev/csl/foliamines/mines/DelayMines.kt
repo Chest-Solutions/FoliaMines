@@ -1,7 +1,7 @@
-package net.anmvc.foliamines.mines
+package dev.csl.foliamines.mines
 
-import net.anmvc.foliamines.FoliaMines.Companion.plugin
-import net.anmvc.foliamines.mines.MinesCore.setArea
+import dev.csl.foliamines.FoliaMines.Companion.plugin
+import dev.csl.foliamines.mines.MinesCore.setArea
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.data.BlockData

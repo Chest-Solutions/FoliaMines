@@ -1,4 +1,4 @@
-package net.anmvc.foliamines
+package dev.csl.foliamines
 
 import com.sk89q.worldedit.IncompleteRegionException
 import com.sk89q.worldedit.LocalSession
@@ -9,8 +9,8 @@ import com.sk89q.worldedit.regions.Region
 import com.sk89q.worldedit.session.SessionManager
 import com.sk89q.worldedit.util.formatting.text.TextComponent
 import com.sk89q.worldedit.world.World
-import net.anmvc.foliamines.gui.CreateMineGui
-import net.anmvc.foliamines.mines.DelayMines
+import dev.csl.foliamines.gui.CreateMineGui
+import dev.csl.foliamines.mines.DelayMines
 import net.kyori.adventure.text.minimessage.MiniMessage.miniMessage
 import org.bukkit.Bukkit
 import org.bukkit.Location

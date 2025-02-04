@@ -1,4 +1,4 @@
-package net.anmvc.foliamines.gui
+package dev.csl.foliamines.gui
 
 import net.kyori.adventure.text.minimessage.MiniMessage.miniMessage
 import org.bukkit.Bukkit

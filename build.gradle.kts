@@ -6,7 +6,7 @@ plugins {
     kotlin("jvm") version "2.1.20-Beta1"
 }
 
-group = "net.anmvc"
+group = "net.csl"
 version = "1.0-SNAPSHOT"
 
 val serverVersion = project.properties["serverVersion"] as String
@@ -27,12 +27,18 @@ repositories {
         name = "enginehub"
         url = uri("https://maven.enginehub.org/repo/")
     }
+
+    maven {
+        name = "Minecraft"
+        url = uri("https://libraries.minecraft.net/")
+    }
 }
 
 dependencies {
     paperweight.paperDevBundle("$serverVersion-R0.1-SNAPSHOT")
     implementation("dev.jorel:commandapi-bukkit-shade-mojang-mapped:9.7.0")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation("me.lucko:commodore:2.2")
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.10-SNAPSHOT")
 }
 
@@ -50,7 +56,7 @@ tasks.runServer {
 }
 
 tasks.shadowJar {
-    relocate("dev.jorel.commandapi", "net.anmvc.relocated")
+    relocate("dev.jorel.commandapi", "net.csl.relocated")
 }
 
 tasks.build {

@@ -1,6 +1,7 @@
 name: FoliaMines
 version: '1.0-SNAPSHOT'
 main: dev.csl.foliamines.FoliaMines
+loader: dev.csl.foliamines.FoliaMinesLoader
 api-version: '1.21'
 folia-supported: true
 dependencies:

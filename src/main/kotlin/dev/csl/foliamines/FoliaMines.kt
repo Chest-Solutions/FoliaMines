@@ -6,6 +6,7 @@ import dev.csl.foliamines.mines.DelayMines
 import dev.csl.foliamines.mines.InstantMines
 import dev.csl.foliamines.mines.PercentageMines
 import org.bukkit.plugin.java.JavaPlugin
+import xyz.xenondevs.invui.InvUI
 
 class FoliaMines: JavaPlugin() {
 
@@ -22,6 +23,7 @@ class FoliaMines: JavaPlugin() {
         DelayMines.registerDelayMines()
         InstantMines.registerInstantMines()
         PercentageMines.registerPercentageMines()
+        InvUI.getInstance().setPlugin(this)
         //server.pluginManager.registerEvents(InstantMines, this)
         //server.pluginManager.registerEvents(PercentageMines, this)
     }

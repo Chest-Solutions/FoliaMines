@@ -7,7 +7,7 @@ import dev.jorel.commandapi.arguments.*
 import dev.jorel.commandapi.executors.CommandExecutor
 import dev.csl.foliamines.FoliaMines
 import dev.csl.foliamines.WorldEditHook
-import dev.csl.foliamines.gui.CreateMineGui
+import dev.csl.foliamines.gui.MinesListGui
 import dev.csl.foliamines.mines.DelayMines
 import org.bukkit.Location
 import org.bukkit.block.data.BlockData
@@ -33,7 +33,7 @@ object Commands {
                     DelayMines.createDelayMine(name, location, location2, delay, blockData)
                 } else if (!FoliaMines.isWorldeditInstalled()) {
                     sender.sendMessage(miniMessage().deserialize("Set a location in the command."))
-                    CreateMineGui.openMineGui(sender)
+                    MinesListGui.openMinesList(sender)
                 } else {
                     WorldEditHook.hookWorldedit(sender, name, blockData, delay)
                 }

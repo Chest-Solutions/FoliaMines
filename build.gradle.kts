@@ -13,6 +13,7 @@ val serverVersion = project.properties["serverVersion"] as String
 
 repositories {
     mavenCentral()
+
     maven {
         name = "papermc-repo"
         url = uri("https://repo.papermc.io/repository/maven-public/")
@@ -32,13 +33,18 @@ repositories {
         name = "Minecraft"
         url = uri("https://libraries.minecraft.net/")
     }
+
+    maven {
+        name = "XeonDevs"
+        url = uri("https://repo.xenondevs.xyz/releases")
+    }
 }
 
 dependencies {
     paperweight.paperDevBundle("$serverVersion-R0.1-SNAPSHOT")
-    implementation("dev.jorel:commandapi-bukkit-shade-mojang-mapped:9.7.0")
+    compileOnly("dev.jorel:commandapi-bukkit-shade-mojang-mapped:9.7.0")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("me.lucko:commodore:2.2")
+    compileOnly("xyz.xenondevs.invui:invui:1.44")
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.10-SNAPSHOT")
 }
 
@@ -56,7 +62,7 @@ tasks.runServer {
 }
 
 tasks.shadowJar {
-    relocate("dev.jorel.commandapi", "net.csl.relocated")
+    minimize()
 }
 
 tasks.build {

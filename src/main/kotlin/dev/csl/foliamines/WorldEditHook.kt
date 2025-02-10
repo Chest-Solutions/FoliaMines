@@ -9,7 +9,7 @@ import com.sk89q.worldedit.regions.Region
 import com.sk89q.worldedit.session.SessionManager
 import com.sk89q.worldedit.util.formatting.text.TextComponent
 import com.sk89q.worldedit.world.World
-import dev.csl.foliamines.gui.CreateMineGui
+import dev.csl.foliamines.gui.MinesListGui
 import dev.csl.foliamines.mines.DelayMines
 import net.kyori.adventure.text.minimessage.MiniMessage.miniMessage
 import org.bukkit.Bukkit
@@ -55,7 +55,7 @@ object WorldEditHook {
                 )
             } else {
                 sender.sendMessage(miniMessage().deserialize("Either: Set a location in the command, Or: Set a normal worldedit area"))
-                CreateMineGui.openMineGui(sender)
+                MinesListGui.openMinesList(sender)
             }
         } catch (_: NoClassDefFoundError) {} catch (_: ClassNotFoundException) {}
     }

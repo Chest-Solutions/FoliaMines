@@ -1,13 +1,15 @@
 package dev.csl.foliamines.gui
 
 import dev.csl.foliamines.gui.items.CreateMineButton
+
 import org.bukkit.Material
-import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
+import org.bukkit.command.CommandSender
+
 import xyz.xenondevs.invui.gui.Gui
-import xyz.xenondevs.invui.item.builder.ItemBuilder
-import xyz.xenondevs.invui.item.impl.SimpleItem
 import xyz.xenondevs.invui.window.Window
+import xyz.xenondevs.invui.item.impl.SimpleItem
+import xyz.xenondevs.invui.item.builder.ItemBuilder
 
 class CreateMineGui {
     companion object {
@@ -30,7 +32,7 @@ class CreateMineGui {
                     "# . . . . . . . #",
                     "# . . . . . . ! #",
                     "# # # # # # # # #")
-                .addIngredient('#', SimpleItem(ItemBuilder(Material.BLACK_STAINED_GLASS_PANE)))
+                .addIngredient('#', SimpleItem(ItemBuilder(Material.BLACK_STAINED_GLASS_PANE).setDisplayName("")))
                 .addIngredient('!', CreateMineButton())
                 .build()
         }

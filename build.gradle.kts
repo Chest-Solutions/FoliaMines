@@ -1,27 +1,20 @@
 plugins {
     java
-    id("io.papermc.paperweight.userdev") version "2.0.0-beta.11"
-    id("xyz.jpenilla.run-paper") version "2.3.1"
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.16"
     id("com.gradleup.shadow") version "9.0.0-beta4"
+    id("xyz.jpenilla.run-paper") version "2.3.1"
     kotlin("jvm") version "2.1.10"
 }
 
-group = "net.csl"
+group = "dev.csl"
 version = "1.0-SNAPSHOT"
 
 val serverVersion = project.properties["serverVersion"] as String
 
 repositories {
-    mavenCentral()
-
     maven {
-        name = "papermc-repo"
+        name = "papermc"
         url = uri("https://repo.papermc.io/repository/maven-public/")
-    }
-
-    maven {
-        name = "sonatype"
-        url = uri("https://oss.sonatype.org/content/groups/public/")
     }
 
     maven {
@@ -38,14 +31,20 @@ repositories {
         name = "XeonDevs"
         url = uri("https://repo.xenondevs.xyz/releases")
     }
+
+    maven {
+        name = "sonatype-oss-snapshots"
+        url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+    }
 }
 
 dependencies {
     paperweight.paperDevBundle("$serverVersion-R0.1-SNAPSHOT")
-    compileOnly("dev.jorel:commandapi-bukkit-shade-mojang-mapped:9.7.0")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    compileOnly("xyz.xenondevs.invui:invui:1.44")
-    compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.10-SNAPSHOT")
+    implementation("dev.jorel:commandapi-bukkit-shade:10.0.1")
+    compileOnly("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    compileOnly("xyz.xenondevs.invui:invui-kotlin:1.45")
+    compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.1")
+
 }
 
 val targetJavaVersion = 21
@@ -67,4 +66,7 @@ tasks.shadowJar {
 
 tasks.build {
     dependsOn(tasks.shadowJar)
+    dependsOn(tasks.reobfJar)
 }
+
+

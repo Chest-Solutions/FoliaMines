@@ -1,17 +1,20 @@
 package dev.csl.foliamines.mines
 
 import dev.csl.foliamines.FoliaMines.Companion.plugin
+
 import org.bukkit.Bukkit
 import org.bukkit.Location
-import org.bukkit.block.data.BlockData
 import org.bukkit.event.Listener
+import org.bukkit.block.data.BlockData
+
 import kotlin.math.max
 import kotlin.math.min
 
 object MinesCore: Listener {
     private fun setBlock(loc: Location, blockData: BlockData) {
-        val chunk = loc.chunk
         Bukkit.getServer().regionScheduler.run(plugin, loc) {
+            val chunk = loc.chunk
+
             if (chunk.isLoaded) {
                 loc.block.blockData = blockData
             } else {
@@ -27,28 +30,6 @@ object MinesCore: Listener {
             setBlock(loc, blockData)
             return
         }
-
-        /*
-        val amountOfblocks = AtomicReference(0)
-
-        val minX = min(loc.blockX.toDouble(), loc2.blockX.toDouble()).toInt()
-        val minY = min(loc.blockY.toDouble(), loc2.blockY.toDouble()).toInt()
-        val minZ = min(loc.blockZ.toDouble(), loc2.blockZ.toDouble()).toInt()
-        val maxX = max(loc.blockX.toDouble(), loc2.blockX.toDouble()).toInt()
-        val maxY = max(loc.blockY.toDouble(), loc2.blockY.toDouble()).toInt()
-        val maxZ = max(loc.blockZ.toDouble(), loc2.blockZ.toDouble()).toInt()
-
-        // Iterate through the volume defined by the two locations
-        for (x in minX..maxX) {
-            for (y in minY..maxY) {
-                for (z in minZ..maxZ) {
-                    val blockLoc = Location(loc.world, x.toDouble(), y.toDouble(), z.toDouble())
-                    setBlock(blockLoc, blockData)
-                    amountOfblocks.set(amountOfblocks.get() + 1)
-                }
-            }
-        }
-        */
 
         for (location: Location in getArea(loc, loc2)) { setBlock(location, blockData) }
     }

@@ -13,7 +13,7 @@ import xyz.xenondevs.invui.item.builder.ItemBuilder
 
 class MinesListGui {
     companion object {
-        fun openMinesList(plr: CommandSender)  {
+        internal fun openMinesList(plr: CommandSender)  {
             if (plr is Player) {
                 val window = Window.single()
                     .setViewer(plr)

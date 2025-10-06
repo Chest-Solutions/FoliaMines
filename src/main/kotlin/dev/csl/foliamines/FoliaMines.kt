@@ -1,15 +1,15 @@
 package dev.csl.foliamines
 
-import dev.jorel.commandapi.CommandAPI
 import dev.csl.foliamines.mines.DelayMines
-import dev.csl.foliamines.commands.Commands
 import dev.csl.foliamines.mines.InstantMines
 import dev.csl.foliamines.mines.PercentageMines
-
-import org.bukkit.plugin.java.JavaPlugin
+import dev.jorel.commandapi.CommandAPI
+import dev.jorel.commandapi.CommandAPIPaperConfig
 import org.bukkit.configuration.file.YamlConfiguration
-
+import org.bukkit.plugin.java.JavaPlugin
 import xyz.xenondevs.invui.InvUI
+import kotlin.properties.Delegates
+
 
 class FoliaMines: JavaPlugin() {
     lateinit var minesConfig: YamlConfiguration
@@ -24,7 +24,12 @@ class FoliaMines: JavaPlugin() {
             this.componentLogger.info("WorldEdit not installed, not hooking into worldedit")
         }
 
-        CommandAPI.onLoad(Commands.getCommandAPIConfig())
+        CommandAPI.onLoad(
+	        CommandAPIPaperConfig(this)
+		        .silentLogs(true)
+		        .fallbackToLatestNMS(false)
+		        .missingExecutorImplementationMessage("An error occurred, Please don't try again")
+		)
         Commands.register()
     }
 
@@ -38,13 +43,13 @@ class FoliaMines: JavaPlugin() {
     }
 
     override fun onDisable() {
+	    CommandAPI.getRegisteredCommands().forEach { command -> CommandAPI.unregister(command.commandName, true) } // reloads
         CommandAPI.onDisable()
         Configurations.saveMinesConfig(this.minesConfig)
     }
 
     companion object {
         lateinit var plugin: FoliaMines
-        var worldEdiInstalled = false
+        var worldEdiInstalled by Delegates.notNull<Boolean>()
     }
-
 }

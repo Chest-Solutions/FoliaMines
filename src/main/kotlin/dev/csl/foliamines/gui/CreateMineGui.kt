@@ -14,7 +14,7 @@ import xyz.xenondevs.invui.item.builder.ItemBuilder
 class CreateMineGui {
     companion object {
 
-        fun openCreateMinesGui(plr: CommandSender)  {
+        internal fun openCreateMinesGui(plr: CommandSender)  {
             if (plr is Player) {
                 val window = Window.single()
                     .setViewer(plr)

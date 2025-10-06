@@ -18,7 +18,7 @@ class CreateMineButton: AbstractItem() {
 
     override fun handleClick(clickType: ClickType, plr: Player, clickEvent: InventoryClickEvent) {
         if (clickType.isLeftClick) {
-            plr.closeInventory()
+            // plr.closeInventory()
             MinesListGui.openMinesList(plr)
         }
     }

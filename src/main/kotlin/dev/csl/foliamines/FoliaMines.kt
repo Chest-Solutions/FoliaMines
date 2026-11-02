@@ -1,5 +1,8 @@
 package dev.csl.foliamines
 
+import dev.csl.foliamines.commands.Commands
+import dev.csl.foliamines.handlers.ChatRenameHandler
+import dev.csl.foliamines.handlers.MultipleBlockBreakHandler
 import dev.csl.foliamines.mines.DelayMines
 import dev.csl.foliamines.mines.InstantMines
 import dev.csl.foliamines.mines.PercentageMines
@@ -7,7 +10,6 @@ import dev.jorel.commandapi.CommandAPI
 import dev.jorel.commandapi.CommandAPIPaperConfig
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.plugin.java.JavaPlugin
-import xyz.xenondevs.invui.InvUI
 import kotlin.properties.Delegates
 
 
@@ -22,12 +24,13 @@ class FoliaMines: JavaPlugin() {
             worldEdiInstalled = true
         } catch (_: ClassNotFoundException) {
             this.componentLogger.info("WorldEdit not installed, not hooking into worldedit")
+            worldEdiInstalled = false
         }
 
         CommandAPI.onLoad(
 	        CommandAPIPaperConfig(this)
 		        .silentLogs(true)
-		        .fallbackToLatestNMS(false)
+		        .fallbackToLatestNMS(true)
 		        .missingExecutorImplementationMessage("An error occurred, Please don't try again")
 		)
         Commands.register()
@@ -36,14 +39,15 @@ class FoliaMines: JavaPlugin() {
     override fun onEnable() {
         CommandAPI.onEnable()
         this.minesConfig = Configurations.createMinesConfig()
-        DelayMines.registerDelayMines()
-        InstantMines.registerInstantMines()
-        PercentageMines.registerPercentageMines()
-        InvUI.getInstance().setPlugin(this)
+        DelayMines.register()
+        InstantMines.register()
+        PercentageMines.register()
+        ChatRenameHandler().setup()
+        MultipleBlockBreakHandler().setup()
     }
 
     override fun onDisable() {
-	    CommandAPI.getRegisteredCommands().forEach { command -> CommandAPI.unregister(command.commandName, true) } // reloads
+	    //CommandAPI.getRegisteredCommands().forEach { command -> CommandAPI.unregister(command.commandName, true) } // reloads
         CommandAPI.onDisable()
         Configurations.saveMinesConfig(this.minesConfig)
     }

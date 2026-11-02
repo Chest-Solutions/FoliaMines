@@ -1,130 +1,172 @@
 package dev.csl.foliamines.mines
 
+import com.sk89q.worldedit.IncompleteRegionException
+import com.sk89q.worldedit.WorldEdit
+import com.sk89q.worldedit.bukkit.BukkitAdapter
 import dev.csl.foliamines.FoliaMines.Companion.plugin
-
+import dev.csl.foliamines.mines.composition.MineComposition
+import dev.csl.foliamines.utils.MineRegion
+import net.minecraft.core.BlockPos
+import net.minecraft.world.level.chunk.ChunkAccess
+import net.minecraft.world.level.chunk.LevelChunkSection
+import net.minecraft.world.level.chunk.status.ChunkStatus
 import org.bukkit.Bukkit
 import org.bukkit.Location
-import org.bukkit.block.BlockState
 import org.bukkit.command.CommandSender
+import org.bukkit.craftbukkit.CraftChunk
+import org.bukkit.craftbukkit.CraftWorld
 import org.bukkit.event.Listener
-import java.lang.reflect.InvocationTargetException
-
-import kotlin.math.max
-import kotlin.math.min
+import java.util.*
 
 object MinesCore: Listener {
-	private val weClass by lazy { Class.forName("com.sk89q.worldedit.WorldEdit") }
-	private val weInstanceMethod by lazy { weClass.getDeclaredMethod("getInstance") }
-	private val sessionMgrMethod by lazy { weClass.getDeclaredMethod("getSessionManager") }
+	fun setArea(
+		region: MineRegion,
+		composition: MineComposition,
+		exclusions: List<MineRegion> = emptyList()   // ← default empty = backward compatible, zero cost
+	) {
+		val plugin = plugin
+		val world = region.world
 
-	private val bukkitAdapterClass by lazy { Class.forName("com.sk89q.worldedit.bukkit.BukkitAdapter") }
-	private val adaptMethod by lazy { bukkitAdapterClass.getDeclaredMethod("adapt", CommandSender::class.java) }
+		// 1. Single Block Optimization
+		if (region.isSingleBlock()) {
+			val loc = region.getLoc1()
+			// ⚠️ NEW: respect exclusions even for single block
+			if (exclusions.any { it.contains(loc.blockX, loc.blockY, loc.blockZ) }) return
+			Bukkit.getServer().regionScheduler.execute(plugin, loc) {
+				loc.block.setBlockData(composition.next(), false)
+			}
+			return
+		}
 
-	private val sessionOwnerClass by lazy { Class.forName("com.sk89q.worldedit.session.SessionOwner") }
+		// 2. Setup NMS
+		val nmsLevel = (world as CraftWorld).handle
+		val lightEngine = nmsLevel.lightEngine
 
-	private val incompleteExClass by lazy { Class.forName("com.sk89q.worldedit.IncompleteRegionException") }
+		// 3. Chunk Ranges
+		val minCx = region.minX shr 4
+		val maxCx = region.maxX shr 4
+		val minCz = region.minZ shr 4
+		val maxCz = region.maxZ shr 4
 
-	private val cuboidRegionClass by lazy { Class.forName("com.sk89q.worldedit.regions.CuboidRegion") }
-	private val localSessionClass by lazy { Class.forName("com.sk89q.worldedit.LocalSession") }
-	private val getSelectionMethod by lazy { localSessionClass.getDeclaredMethod("getSelection", Class.forName("com.sk89q.worldedit.world.World")) }
-	private val boundingBoxMethod by lazy { cuboidRegionClass.getDeclaredMethod("getBoundingBox") }
+		for (cx in minCx..maxCx) {
+			for (cz in minCz..maxCz) {
 
-	private val sessionMgrClass by lazy { Class.forName("com.sk89q.worldedit.session.SessionManager") }
-	private val getMethod by lazy { sessionMgrClass.getDeclaredMethod("get", sessionOwnerClass) }
+				val chunkLoc = Location(world, (cx shl 4).toDouble() + 8.0, 0.0, (cz shl 4).toDouble() + 8.0)
 
-	private val getSelectionWorldMethod by lazy { localSessionClass.getDeclaredMethod("getSelectionWorld") }
+				Bukkit.getServer().regionScheduler.execute(plugin, chunkLoc) {
+					val bukkitChunk = world.getChunkAt(cx, cz)
+					val nmsChunk = (bukkitChunk as CraftChunk).getHandle(ChunkStatus.FULL)
 
-	private val boundingBoxClass by lazy { Class.forName("com.sk89q.worldedit.math.BlockVector3") }
-	private val pos1Method by lazy { cuboidRegionClass.getDeclaredMethod("getPos1") }
-	private val pos2Method by lazy { cuboidRegionClass.getDeclaredMethod("getPos2") }
+					val mutablePos = BlockPos.MutableBlockPos()
+					val touchedSections = BitSet(nmsChunk.sectionsCount)   // ⚠️ FIX: was BitSet(32) hardcoded
+					var blockChanged = false
 
-	private val xMethod by lazy { boundingBoxClass.getDeclaredMethod("getX") }
-	private val yMethod by lazy { boundingBoxClass.getDeclaredMethod("getY") }
-	private val zMethod by lazy { boundingBoxClass.getDeclaredMethod("getZ") }
+					// Calculate Global Bounds for this specific chunk
+					val xStart = if ((cx shl 4) >= region.minX) (cx shl 4) else region.minX
+					val xEnd = if ((cx shl 4) + 15 <= region.maxX) (cx shl 4) + 15 else region.maxX
+					val zStart = if ((cz shl 4) >= region.minZ) (cz shl 4) else region.minZ
+					val zEnd = if ((cz shl 4) + 15 <= region.maxZ) (cz shl 4) + 15 else region.maxZ
 
-    private fun setBlock(loc: Location, blockState: BlockState) {
-        Bukkit.getServer().regionScheduler.run(plugin, loc) {
-            val chunk = loc.chunk
+					// --- PRE-FILTER exclusions for THIS chunk (once, not per-block) ---
+					val chunkMinX = cx shl 4; val chunkMaxX = chunkMinX + 15
+					val chunkMinZ = cz shl 4; val chunkMaxZ = chunkMinZ + 15
+					val relevantExclusions = exclusions.filter { ex ->
+						ex.maxX >= chunkMinX && ex.minX <= chunkMaxX &&
+								ex.maxZ >= chunkMinZ && ex.minZ <= chunkMaxZ
+					}
+					val hasExclusions = relevantExclusions.isNotEmpty()
 
-            if (chunk.isLoaded) {
-                loc.block.blockData = blockState.blockData
-            } else {
-                loc.chunk.addPluginChunkTicket(plugin)
-                loc.block.blockData = blockState.blockData
-                loc.chunk.removePluginChunkTicket(plugin)
-            }
-        }
-    }
+					var currentSectionIndex = -1
+					var currentSection: LevelChunkSection? = null
 
-    internal fun setArea(loc: Location, loc2: Location?, blockState: BlockState) {
-        if (loc2 == null) {
-            setBlock(loc, blockState)
-            return
-        }
+					// LOOP (Global Coords)
+					for (x in xStart..xEnd) {
+						for (z in zStart..zEnd) {
+							for (y in region.minY..region.maxY) {
 
-        for (location: Location in getArea(loc, loc2)) { setBlock(location, blockState) }
-    }
+								// --- EXCLUSION CHECK (only if this chunk has overlapping exclusions) ---
+								if (hasExclusions) {
+									var excluded = false
+									for (ex in relevantExclusions) {
+										if (ex.contains(x, y, z)) { excluded = true; break }
+									}
+									if (excluded) continue
+								}
 
-    internal fun getArea(loc: Location, loc2: Location): ArrayList<Location> {
-        val locList: ArrayList<Location> = ArrayList()
+								val sectionIndex = nmsChunk.getSectionIndex(y)
+								if (sectionIndex != currentSectionIndex) {
+									currentSection = nmsChunk.getSection(sectionIndex)
+									currentSectionIndex = sectionIndex
+								}
+								val nmsState = composition.nextNMS()
 
-        val minX = min(loc.blockX.toDouble(), loc2.blockX.toDouble()).toInt()
-        val minY = min(loc.blockY.toDouble(), loc2.blockY.toDouble()).toInt()
-        val minZ = min(loc.blockZ.toDouble(), loc2.blockZ.toDouble()).toInt()
-        val maxX = max(loc.blockX.toDouble(), loc2.blockX.toDouble()).toInt()
-        val maxY = max(loc.blockY.toDouble(), loc2.blockY.toDouble()).toInt()
-        val maxZ = max(loc.blockZ.toDouble(), loc2.blockZ.toDouble()).toInt()
+								currentSection!!.setBlockState(x and 15, y and 15, z and 15, nmsState, false)
+								touchedSections.set(sectionIndex)
+								blockChanged = true
+							}
+						}
+					}
 
-        // Iterate through the volume defined by the two locations
-        for (x in minX..maxX) {
-            for (y in minY..maxY) {
-                for (z in minZ..maxZ) {
-                    val blockLoc = Location(loc.world, x.toDouble(), y.toDouble(), z.toDouble())
-                    locList.add(blockLoc)
-                }
-            }
-        }
-        return locList
-    }
+					if (blockChanged) {
+						// Lighting
+						var i = touchedSections.nextSetBit(0)
+						while (i >= 0) {
+							val sectionY = nmsLevel.getSectionYFromSectionIndex(i) shl 4
+							lightEngine.checkBlock(mutablePos.set((cx shl 4) + 8, sectionY + 8, (cz shl 4) + 8))
+							i = touchedSections.nextSetBit(i + 1)
+						}
+						world.refreshChunk(bukkitChunk.x, bukkitChunk.z)
+					}
+				}
+			}
+		}
+	}
 
 	internal fun hookWorldEdit(sender: CommandSender): List<Location>? {
-		val weInstance = weInstanceMethod.invoke(null)
-		val sessionMgr = sessionMgrMethod.invoke(weInstance)
-		val adapted = adaptMethod.invoke(null, sender)
-		val actor = getMethod.invoke(sessionMgr, adapted)
+		val actor = BukkitAdapter.adapt(sender)
+		val session = WorldEdit.getInstance().sessionManager.get(actor)
 
-		val selectionWorld = getSelectionWorldMethod.invoke(actor)
+		val selectionWorld = session.selectionWorld ?: return null
 
+		// 2. Get Region (Throws exception if incomplete)
 		val region = try {
-			getSelectionMethod.invoke(actor, selectionWorld)
-		} catch (e: InvocationTargetException) {
-			if (incompleteExClass.isInstance(e.cause)) return null
+			session.getSelection(selectionWorld)
+		} catch (e: Exception) {
+			if (e is IncompleteRegionException) return null
 			throw e
 		}
 
-		val bbox = boundingBoxMethod.invoke(region)
-		val p1 = pos1Method.invoke(bbox)
-		val p2 = pos2Method.invoke(bbox)
+		// 3. Convert Coords
+		val world = Bukkit.getWorld(selectionWorld.name) ?: return null
+		val min = region.minimumPoint
+		val max = region.maximumPoint
 
-		fun coord(vec: Any, meth: java.lang.reflect.Method) = meth.invoke(vec) as Int
+		val loc1 = Location(world, min.x().toDouble(), min.y().toDouble(), min.z().toDouble())
+		val loc2 = Location(world, max.x().toDouble(), max.y().toDouble(), max.z().toDouble())
 
-		val worldName = selectionWorld.javaClass
-			.getMethod("getName")
-			.invoke(selectionWorld) as String
-		val bukkitWorld = Bukkit.getWorld(worldName) ?: return null
-
-		val loc1 = Location(
-			bukkitWorld,
-			coord(p1, xMethod).toDouble(),
-			coord(p1, yMethod).toDouble(),
-			coord(p1, zMethod).toDouble()
-		)
-		val loc2 = Location(
-			bukkitWorld,
-			coord(p2, xMethod).toDouble(),
-			coord(p2, yMethod).toDouble(),
-			coord(p2, zMethod).toDouble()
-		)
 		return listOf(loc1, loc2)
+	}
+
+	// --- VERSION WRAPPER (REQUIRED) ---
+	// Keeps 1.20 and 1.21 happy
+	private val setterHandle: (Any, Any, Any) -> Unit = run {
+		val lookup = java.lang.invoke.MethodHandles.lookup()
+		val chunk = ChunkAccess::class.java
+		val pos = BlockPos::class.java
+		val state = net.minecraft.world.level.block.state.BlockState::class.java
+		try {
+			val mh = lookup.findVirtual(chunk, "setBlockState", java.lang.invoke.MethodType.methodType(state, pos, state))
+			return@run { c: Any, p: Any, s: Any -> mh.invoke(c, p, s); }
+		} catch (_: NoSuchMethodException) {
+			val mh = lookup.findVirtual(chunk, "setBlockState", java.lang.invoke.MethodType.methodType(state, pos, state, Boolean::class.javaPrimitiveType))
+			return@run { c: Any, p: Any, s: Any -> mh.invoke(c, p, s, false); }
+		}
+	}
+
+	private fun ChunkAccess.setBlockFast(
+		pos: BlockPos,
+		state: net.minecraft.world.level.block.state.BlockState
+	) {
+		setterHandle(this, pos, state)
 	}
 }

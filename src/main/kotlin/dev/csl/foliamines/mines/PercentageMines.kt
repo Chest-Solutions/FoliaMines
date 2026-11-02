@@ -1,104 +1,126 @@
 package dev.csl.foliamines.mines
 
-import dev.csl.foliamines.mines.MinesCore.setArea
-import dev.csl.foliamines.mines.MinesCore.getArea
 import dev.csl.foliamines.FoliaMines.Companion.plugin
-
-import org.bukkit.Bukkit
-import org.bukkit.Location
-import org.bukkit.block.BlockState
-import org.bukkit.event.Listener
-import org.bukkit.event.EventHandler
-import org.bukkit.event.EventPriority
-import org.bukkit.event.block.BlockBreakEvent
+import dev.csl.foliamines.gui.items.BaseMine
+import dev.csl.foliamines.gui.items.MineManager
+import dev.csl.foliamines.gui.items.MineType
+import dev.csl.foliamines.mines.MinesCore.setArea
+import dev.csl.foliamines.mines.composition.MineComposition
+import dev.csl.foliamines.utils.MineRegion
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.FileConfiguration
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
-object PercentageMines: Listener {
-	data class Quadruple<A, B, C, D>(
-		val first: A,
-		val second: B,
-		val third: C,
-		val fourth: D
-	)
-	
-    private val config: FileConfiguration = plugin.minesConfig
-    private val minesSection: ConfigurationSection = this.config.getConfigurationSection("mines")!!
-	private val mines = mutableMapOf<String, Quadruple<Location, Location, Int, BlockState>>()
+object PercentageMines : MineManager {
 
-    private fun getPercentage(area: ArrayList<Location>): Double {
-        var totalBlocks = 0
-        var solidBlocks = 0
+	private val config: FileConfiguration = plugin.minesConfig
+	private val minesSection: ConfigurationSection = this.config.getConfigurationSection("mines")!!
 
-        for (location: Location in area) {
-            totalBlocks++
-            if (!location.block.type.isAir) {
-                solidBlocks++
-            }
-        }
+	class PercentageMineCache(
+		name: String,
+		region: MineRegion,
+		composition: MineComposition,
+		val minPercentage: Double
+	) : BaseMine(name, region, composition) {
 
-        return if (totalBlocks > 0) {
-            (solidBlocks.toDouble() / totalBlocks.toDouble()) * 100.0
-        } else {
-            0.0
-        }
-    }
+		override val type = MineType.PERCENTAGE
 
-    internal fun registerPercentageMines() {
-	    Bukkit.getPluginManager().registerEvents(this, plugin)
+		val totalVolume: Long = region.volume
+		val brokenBlocks = AtomicLong(0)
+		val resetInProgress: AtomicBoolean = AtomicBoolean(false)
 
-        this.minesSection.getKeys(false).forEach { key ->
-            val mineSection: ConfigurationSection = this.minesSection.getConfigurationSection(key) ?: return
+		fun resetCounter() { brokenBlocks.set(0) }
 
-            if (mineSection.get("type") == "percentage") {
-                val loc: Location = mineSection.get("location") as Location
-                val loc2: Location = mineSection.get("location2") as Location
-                val blockState: BlockState = Bukkit.getServer().createBlockData(mineSection.get("blockData").toString()).createBlockState()
-                val minPercentage: Int = mineSection.get("minimum percentage") as Int
-
-                setupListeners(mineSection.name, loc, loc2, minPercentage, blockState)
-            }
-        }
-    }
-
-    fun createPercentageMine(name: String, loc: Location, loc2: Location, minPercentage: Int, blockState: BlockState) {
-        val mineSection: ConfigurationSection = this.minesSection.createSection(name)
-
-        mineSection.set("type", "percentage")
-        mineSection.set("blockData", blockState.blockData.asString)
-        mineSection.set("location", loc)
-        mineSection.set("location2", loc2)
-        mineSection.set("minimum percentage", minPercentage)
-
-        setupListeners(name, loc, loc2, minPercentage, blockState)
-    }
-
-	fun deletePercentageMine(name: String): PercentageMines? {
-		minesSection.set(name, null)
-		if (mines.containsKey(name)) {
-			mines.remove(name)
-		} else {
-			return null
+		override fun reset() {
+			resetCounter()
+			setArea(region, composition)
 		}
-		return PercentageMines
 	}
 
-	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-	fun onBlockBreakEvent(event: BlockBreakEvent) {
-		for ((_, triple) in mines) {
-			val (loc, loc2, minPercentage, blockState) = triple
+	internal val percentageMines = mutableListOf<PercentageMineCache>()
 
-			val area: ArrayList<Location> = getArea(loc, loc2)
+	// Hybrid Spatial Hashing
+	private val chunkMap = HashMap<Long, MutableList<PercentageMineCache>>()
+	private val globalMines = mutableListOf<PercentageMineCache>()
+	private const val MAX_INDEX_SIZE = 4096
 
-			if (area.contains(event.block.location)) {
-				if (getPercentage(area) < minPercentage) {
-					setArea(loc, loc2, blockState)
+	fun getCandidateMines(chunkKey: Long): List<PercentageMineCache> {
+		val local = chunkMap[chunkKey]
+		return if (local == null) globalMines
+		else if (globalMines.isEmpty()) local
+		else local + globalMines
+	}
+
+	override fun register() {
+		percentageMines.clear()
+		chunkMap.clear()
+		globalMines.clear()
+
+		this.minesSection.getKeys(false).forEach { key ->
+			val section = this.minesSection.getConfigurationSection(key) ?: return
+			if (section.getString("type") == "percentage") {
+				val region = MineRegion.fromConfig(section) ?: return
+				val composition = MineComposition.fromConfig(section)
+				val minPercent = section.getDouble("minimum percentage")
+
+				cacheMine(key, region, minPercent, composition)
+			}
+		}
+	}
+
+	override fun delete(name: String): Boolean {
+		if (percentageMines.none { it.name == name } && !minesSection.contains(name)) return false
+
+		minesSection.set(name, null)
+
+		val removed = percentageMines.removeIf { it.name == name }
+		if (removed) rebuildIndex()
+		return removed
+	}
+
+	fun createPercentageMine(name: String, region: MineRegion, minPercentage: Double, composition: MineComposition) {
+		val section = this.minesSection.createSection(name)
+		section.set("type", "percentage")
+
+		region.saveToConfig(section)
+		composition.saveToConfig(section)
+
+		section.set("minimum percentage", minPercentage)
+
+		cacheMine(name, region, minPercentage, composition)
+		setArea(region, composition)
+	}
+
+	private fun cacheMine(name: String, region: MineRegion, minPercent: Double, composition: MineComposition) {
+		val mine = PercentageMineCache(name, region, composition, minPercent)
+		percentageMines.add(mine)
+		indexMine(mine)
+	}
+
+	private fun indexMine(mine: PercentageMineCache) {
+		val minCx = mine.region.minX shr 4
+		val maxCx = mine.region.maxX shr 4
+		val minCz = mine.region.minZ shr 4
+		val maxCz = mine.region.maxZ shr 4
+
+		val area = ((maxCx - minCx + 1).toLong() * (maxCz - minCz + 1).toLong())
+
+		if (area > MAX_INDEX_SIZE) {
+			globalMines.add(mine)
+		} else {
+			for (cx in minCx..maxCx) {
+				for (cz in minCz..maxCz) {
+					val key = (cx.toLong() shl 32) or (cz.toLong() and 0xFFFFFFFFL)
+					chunkMap.computeIfAbsent(key) { ArrayList() }.add(mine)
 				}
 			}
 		}
 	}
 
-    private fun setupListeners(name: String, loc: Location, loc2: Location, minPercentage: Int, blockState: BlockState) {
-	    mines[name] = Quadruple(loc, loc2, minPercentage, blockState)
-    }
+	private fun rebuildIndex() {
+		chunkMap.clear()
+		globalMines.clear()
+		percentageMines.forEach { indexMine(it) }
+	}
 }

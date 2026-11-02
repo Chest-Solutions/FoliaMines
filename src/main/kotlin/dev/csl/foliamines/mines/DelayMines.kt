@@ -1,60 +1,101 @@
 package dev.csl.foliamines.mines
 
-import dev.csl.foliamines.mines.MinesCore.setArea
 import dev.csl.foliamines.FoliaMines.Companion.plugin
+import dev.csl.foliamines.gui.items.BaseMine
+import dev.csl.foliamines.gui.items.MineManager
+import dev.csl.foliamines.gui.items.MineType
+import dev.csl.foliamines.mines.MinesCore.setArea
+import dev.csl.foliamines.mines.composition.MineComposition
+import dev.csl.foliamines.utils.MineRegion
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask
-
-import org.bukkit.Bukkit
-import org.bukkit.Location
-import org.bukkit.block.BlockState
 import org.bukkit.configuration.ConfigurationSection
-import org.bukkit.configuration.file.YamlConfiguration
-
+import org.bukkit.configuration.file.FileConfiguration
 import java.util.concurrent.TimeUnit
 
-object DelayMines {
-    private val tasks: HashMap<String, ScheduledTask> = HashMap()
+object DelayMines : MineManager {
 
+	private val config: FileConfiguration = plugin.minesConfig
+	private val minesSection: ConfigurationSection = this.config.getConfigurationSection("mines")!!
 
-	private val config: YamlConfiguration = plugin.minesConfig
-    private val minesSection: ConfigurationSection = this.config.getConfigurationSection("mines")!!
+	class DelayCache(
+		name: String,
+		region: MineRegion,
+		val delayMinutes: Int,
+		composition: MineComposition,
+		var task: ScheduledTask?
+	) : BaseMine(name, region, composition) {
 
-    internal fun registerDelayMines() {
-        this.minesSection.getKeys(false).forEach { key ->
-            val mineSection: ConfigurationSection = this.minesSection.getConfigurationSection(key) ?: return
+		override val type = MineType.DELAY
 
-            if (mineSection.get("type") == "delay") {
-                val loc: Location = mineSection.get("location") as Location
-                val loc2: Location? = mineSection.get("location2") as Location?
-                val blockState: BlockState = Bukkit.getServer().createBlockData(mineSection.get("blockData").toString()).createBlockState()
-                val delay: Int = mineSection.get("delay") as Int
+		override fun reset() {
+			setArea(region, composition)
+		}
+	}
 
-                registerMine(loc, loc2, delay, blockState, mineSection.name)
-            }
-        }
-    }
+	internal val delayMines = mutableListOf<DelayCache>()
 
-    fun createDelayMine(name: String, loc: Location, loc2: Location?, delay: Int, blockState: BlockState) {
-        val mineSection: ConfigurationSection = this.minesSection.createSection(name)
+	override fun register() {
+		delayMines.forEach { it.task?.cancel() }
+		delayMines.clear()
 
-        mineSection.set("type", "delay")
-        mineSection.set("blockData", blockState.blockData.asString)
-        mineSection.set("location", loc)
-        mineSection.set("location2", loc)
-        mineSection.set("delay", delay)
+		this.minesSection.getKeys(false).forEach { key ->
+			val section = this.minesSection.getConfigurationSection(key) ?: return
 
-        registerMine(loc, loc2, delay, blockState, name)
-    }
+			if (section.getString("type") == "delay") {
+				// 1. Load Region (Handles migration & validation)
+				val region = MineRegion.fromConfig(section) ?: return
 
-    fun deleteDelayMine(name: String) {
-	    minesSection.set(name, null)
-        tasks.get(name)?.cancel()
-        tasks.remove(name)
-    }
+				val delay = section.getInt("delay")
+				val composition = MineComposition.fromConfig(section)
 
-    private fun registerMine(loc: Location, loc2: Location?, delay: Int, blockState: BlockState, mineName: String) {
-	    tasks[mineName] = Bukkit.getServer().asyncScheduler.runAtFixedRate(plugin, {
-	        setArea(loc, loc2, blockState)
-	    }, 0L, delay.toLong(), TimeUnit.MINUTES)
-    }
+				createAndCache(key, region, delay, composition)
+			}
+		}
+	}
+
+	override fun delete(name: String): Boolean {
+		if (delayMines.none { it.name == name } && !minesSection.contains(name)) return false
+
+		minesSection.set(name, null)
+
+		return delayMines.removeIf { mine ->
+			if (mine.name == name) {
+				mine.task?.cancel()
+				true
+			} else {
+				false
+			}
+		}
+	}
+
+	fun createDelayMine(name: String, region: MineRegion, delayMinutes: Int, composition: MineComposition) {
+		val section = this.minesSection.createSection(name)
+		section.set("type", "delay")
+
+		// Use Region to save coords
+		region.saveToConfig(section)
+		composition.saveToConfig(section)
+
+		section.set("delay", delayMinutes)
+
+		createAndCache(name, region, delayMinutes, composition)
+
+		// Initial Fill
+		setArea(region, composition)
+	}
+
+	private fun createAndCache(name: String, region: MineRegion, delay: Int, composition: MineComposition) {
+		// Remove existing if overwriting
+		delayMines.find { it.name == name }?.task?.cancel()
+		delayMines.removeIf { it.name == name }
+
+		val cache = DelayCache(name, region, delay, composition, null)
+
+		val task = org.bukkit.Bukkit.getServer().asyncScheduler.runAtFixedRate(plugin, {
+			cache.reset()
+		}, 0L, cache.delayMinutes.toLong(), TimeUnit.MINUTES)
+
+		cache.task = task
+		delayMines.add(cache)
+	}
 }

@@ -11,7 +11,7 @@ object Configurations {
 
     internal fun createMinesConfig(): YamlConfiguration {
 		if (!minesConfigFile.exists()) plugin.saveResource("mines.yml", false)
-        return YamlConfiguration.loadConfiguration(this.minesConfigFile) // much slimed down
+        return YamlConfiguration.loadConfiguration(this.minesConfigFile)
     }
 
     internal fun saveMinesConfig(configuration: YamlConfiguration) {

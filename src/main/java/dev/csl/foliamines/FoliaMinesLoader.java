@@ -11,19 +11,12 @@ public class FoliaMinesLoader implements PluginLoader {
 	@Override
 	public void classloader(PluginClasspathBuilder pluginClasspathBuilder) {
 		MavenLibraryResolver resolver = new MavenLibraryResolver();
-		resolver.addRepository(new RemoteRepository.Builder("xenondevs", "default", "https://repo.xenondevs.xyz/releases/").build());
-		resolver.addRepository(new RemoteRepository.Builder("mavenCentral", "default", "https://oss.sonatype.org/content/groups/public/").build());
+		resolver.addRepository(new RemoteRepository.Builder("mavenCentral", "default", "https://maven-central.storage-download.googleapis.com/maven2/").build());
 
-		resolver.addDependency(new Dependency(new DefaultArtifact("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.20"), null));
+		resolver.addDependency(new Dependency(new DefaultArtifact("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.21"), null));
 
-		resolver.addDependency(new Dependency(new DefaultArtifact("xyz.xenondevs.invui:invui-core:1.47"), null));
-		resolver.addDependency(new Dependency(new DefaultArtifact("xyz.xenondevs.invui:inventory-access-r19:1.47"), null));
-		resolver.addDependency(new Dependency(new DefaultArtifact("xyz.xenondevs.invui:inventory-access-r20:1.47"), null));
-		resolver.addDependency(new Dependency(new DefaultArtifact("xyz.xenondevs.invui:inventory-access-r21:1.47"), null));
-		resolver.addDependency(new Dependency(new DefaultArtifact("xyz.xenondevs.invui:inventory-access-r22:1.47"), null));
-		resolver.addDependency(new Dependency(new DefaultArtifact("xyz.xenondevs.invui:inventory-access-r23:1.47"), null));
-		resolver.addDependency(new Dependency(new DefaultArtifact("xyz.xenondevs.invui:inventory-access-r24:1.47"), null));
-		resolver.addDependency(new Dependency(new DefaultArtifact("xyz.xenondevs.invui:inventory-access-r25:1.47"), null));
+		resolver.addDependency(new Dependency(new DefaultArtifact("dev.jorel:commandapi-paper-shade:12.1.0"), null));
+		resolver.addDependency(new Dependency(new DefaultArtifact("com.github.stefvanschie.inventoryframework:IF:0.11.6"), null));
 
 		pluginClasspathBuilder.addLibrary(resolver);
 	}
